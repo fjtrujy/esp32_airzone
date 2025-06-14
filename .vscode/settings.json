@@ -1,0 +1,18 @@
+{
+  "idf.pythonInstallPath": "/usr/local/bin/python3",
+  "idf.espIdfPath": "/Users/fjtrujy/toolschains/esp/v5.4.1/esp-idf",
+  "idf.openOcdConfigs": [
+    "board/esp32-wrover-kit-3.3v.cfg"
+  ],
+  "idf.port": "/dev/tty.usbserial-0001",
+  "idf.toolsPath": "/Users/fjtrujy/.espressif",
+  "idf.customExtraVars": {
+    "IDF_TARGET": "esp32"
+  },
+  "idf.monitorPort": "/dev/tty.usbserial-0001",
+  "idf.flashType": "UART",
+  "idf.monitorBaudRate": "115200",
+  "idf.flashBaudRate": "115200",
+  "idf.debugAdapterPort": "3333",
+  "idf.debugAdapterHost": "localhost"
+}
