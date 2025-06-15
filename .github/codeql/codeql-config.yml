@@ -1,0 +1,18 @@
+name: "ESP-IDF CodeQL Config"
+
+queries:
+  - uses: security-and-quality
+
+paths:
+  - main/
+  - components/
+
+paths-ignore:
+  - build/
+  - managed_components/
+  - dependencies.lock
+  - .espressif/
+  - sdkconfig
+  - sdkconfig.old
+
+build-mode: manual 

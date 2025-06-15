@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main, master, develop ]
 
+permissions:
+  contents: read
+  packages: read
+
 jobs:
   quick-build:
     runs-on: ubuntu-latest
@@ -21,15 +25,11 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install ESP-IDF
+    - name: Install ESP-IDF and Build
       uses: espressif/esp-idf-ci-action@v1
       with:
         esp_idf_version: v5.4.1
         target: esp32
-
-    - name: Build project
-      run: |
-        idf.py build
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
@@ -42,7 +42,4 @@ jobs:
       run: |
         echo "=== Build Size Report ==="
         ls -lh build/*.bin
-        echo "=== Component Sizes ==="
-        idf.py size-components
-        echo "=== Memory Usage ==="
-        idf.py size-files 
+        echo "=== Build completed successfully ===" 
