@@ -1,6 +1,0 @@
-dependencies:
-  # DHT11/DHT22 temperature and humidity sensor component
-  dht:
-    version: "^1.4.0"
-    git: https://github.com/UncleRus/esp-idf-lib.git
-    path: components/dht 
