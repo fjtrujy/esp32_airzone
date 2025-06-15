@@ -1,0 +1,48 @@
+name: ESP32 Development Build
+
+on:
+  push:
+    branches: [ develop, feature/*, bugfix/* ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  quick-build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install ESP-IDF
+      uses: espressif/esp-idf-ci-action@v1
+      with:
+        esp_idf_version: v5.4.1
+        target: esp32
+
+    - name: Build project
+      run: |
+        idf.py build
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: esp32-dev-firmware
+        path: build/esp32_airzone.bin
+        retention-days: 7
+
+    - name: Build size report
+      run: |
+        echo "=== Build Size Report ==="
+        ls -lh build/*.bin
+        echo "=== Component Sizes ==="
+        idf.py size-components
+        echo "=== Memory Usage ==="
+        idf.py size-files 
