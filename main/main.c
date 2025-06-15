@@ -1,34 +1,78 @@
 #include <stdio.h>
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
+#include "driver/i2c_master.h"
 #include "esp_log.h"
 #include "dht.h"
+#include "ssd1306.h"
 
-static const char *TAG = "DHT11_TEST";
+static const char *TAG = "ESP32_AIRZONE";
 
-#define CONFIG_DHT11_PIN GPIO_NUM_5
-#define CONFIG_CONNECTION_TIMEOUT 5
+// GPIO Configuration for ESP32 DEVKITV1
+#define DHT11_GPIO GPIO_NUM_4
 
-void app_main() {
-    ESP_LOGI(TAG, "Starting DHT11 test on GPIO %d", CONFIG_DHT11_PIN);
+void app_main(void)
+{
+    ESP_LOGI(TAG, "Starting ESP32 Airzone with SSD1306 display");
 
-    // Read data using the espidflib DHT library
-    while(1)
+    // Initialize SSD1306 display
+    init_ssd1306();
+    ESP_LOGI(TAG, "SSD1306 display initialized");
+
+    // Show initial welcome message
+    ssd1306_print_str(18, 0, "ESP32 Airzone", false);
+    ssd1306_print_str(28, 17, "Thermostat", false);
+    ssd1306_print_str(38, 27, "Starting...", false);
+    ssd1306_display();
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+
+    ESP_LOGI(TAG, "Starting DHT11 sensor on GPIO %d", DHT11_GPIO);
+
+    // Main loop: display DHT11 sensor data
+    while (1)
     {
+        // Clear the screen at the beginning of each frame
+        ssd1306_clear();
+        
         float humidity = 0.0f;
         float temperature = 0.0f;
+        esp_err_t result = dht_read_float_data(DHT_TYPE_DHT11, DHT11_GPIO, &humidity, &temperature);
         
-        esp_err_t result = dht_read_float_data(DHT_TYPE_DHT11, CONFIG_DHT11_PIN, &humidity, &temperature);
-        
-        if(result == ESP_OK)
-        {  
+        if (result == ESP_OK)
+        {
             ESP_LOGI(TAG, "Temperature: %.2f°C, Humidity: %.2f%%", temperature, humidity);
+            
+            // Show sensor data on display
+            ssd1306_print_str(0, 0, "Temperature:", false);
+            ssd1306_print_str(0, 20, "Humidity:", false);
+            
+            // Convert float to string for display
+            char temp_str[16];
+            char hum_str[16];
+            snprintf(temp_str, sizeof(temp_str), "%.1f C", temperature);
+            snprintf(hum_str, sizeof(hum_str), "%.1f %%", humidity);
+            
+            ssd1306_print_str(0, 10, temp_str, false);
+            ssd1306_print_str(0, 30, hum_str, false);
+            
+            // Show status
+            ssd1306_print_str(0, 50, "Status: OK", false);
         }
-        else {
+        else
+        {
             ESP_LOGE(TAG, "Failed to read DHT11 sensor, error: %s", esp_err_to_name(result));
+            
+            // Show error on display
+            ssd1306_print_str(0, 0, "Sensor Error:", false);
+            ssd1306_print_str(0, 17, "Check wiring", false);
+            ssd1306_print_str(0, 27, "GPIO 4", false);
+            ssd1306_print_str(0, 37, "DHT11", false);
+            ssd1306_print_str(0, 47, "Status: ERROR", false);
         }
         
-        vTaskDelay(pdMS_TO_TICKS(2000));
-    } 
+        ssd1306_display();
+        vTaskDelay(3000 / portTICK_PERIOD_MS);
+    }
 }

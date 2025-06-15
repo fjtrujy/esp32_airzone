@@ -1,6 +1,6 @@
 {
   "idf.pythonInstallPath": "/usr/local/bin/python3",
-  "idf.espIdfPath": "/Users/fjtrujy/toolschains/esp/v5.4.1/esp-idf",
+  "idf.espIdfPath": "/Users/fjtrujy/toolchains/esp/v5.4.1/esp-idf",
   "idf.openOcdConfigs": [
     "board/esp32-wrover-kit-3.3v.cfg"
   ],
