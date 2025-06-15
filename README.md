@@ -106,6 +106,107 @@ idf.py -p /dev/tty.usbserial-0001 -b 115200 monitor
 4. Verify OLED display shows startup message
 5. Test button functionality
 
+## CI/CD Pipeline
+
+This project uses GitHub Actions for continuous integration and deployment.
+
+### Workflows
+
+#### 1. Development Build (`esp32-dev.yml`)
+**Triggers:** Push to `develop`, `feature/*`, `bugfix/*` branches, and PRs to main branches
+**Purpose:** Quick feedback during development
+
+**Features:**
+- Fast build and test
+- Build size reporting
+- Artifact upload (7-day retention)
+- Memory usage analysis
+
+#### 2. Production Build (`esp32-build.yml`)
+**Triggers:** Push to `main`/`master` branches, and PRs to main branches
+**Purpose:** Full production pipeline
+
+**Jobs:**
+- **Build:** Compiles the project and uploads artifacts
+- **Test:** Runs tests and code formatting checks
+- **Security:** Performs CodeQL security analysis
+- **Release:** Creates GitHub releases with firmware files
+
+### Artifacts
+
+#### Development Builds
+- `esp32_airzone.bin` - Main application firmware
+- Build size reports
+- Memory usage analysis
+
+#### Production Releases
+- `esp32_airzone.bin` - Main application firmware
+- `bootloader.bin` - ESP32 bootloader
+- `partition-table.bin` - Partition table
+- GitHub release with version tags
+
+### CI/CD Integration
+1. **Push to feature branch** → Triggers development build
+2. **Create PR to main** → Triggers full pipeline
+3. **Merge to main** → Creates release automatically
+
+### Configuration
+
+#### ESP-IDF Version
+- **Version:** v5.4.1
+- **Target:** ESP32
+- **Python:** 3.11
+
+#### Dependencies
+The pipeline automatically handles:
+- ESP-IDF installation
+- Component dependencies (via `idf-component-manager`)
+- Build environment setup
+
+### Security
+
+#### CodeQL Analysis
+- Automatic security scanning
+- C/C++ code analysis
+- Vulnerability detection
+
+#### Code Quality
+- Format checking with `idf.py check-format`
+- Component size monitoring
+- Memory usage tracking
+
+### Local Development
+```bash
+# Build locally
+idf.py build
+
+# Check formatting
+idf.py check-format
+
+# Run tests (when available)
+idf.py test
+
+# Test the build locally
+idf.py build
+idf.py size-components
+idf.py check-format
+```
+
+### Troubleshooting
+
+#### Common Issues
+1. **Build failures:** Check ESP-IDF version compatibility
+2. **Dependency issues:** Verify `idf_component.yml` configuration
+3. **Memory issues:** Monitor build size reports
+
+### Future Enhancements
+
+- [ ] Add unit tests
+- [ ] Add hardware-in-the-loop testing
+- [ ] Add firmware signing
+- [ ] Add OTA update testing
+- [ ] Add performance benchmarking
+
 ## Configuration
 
 ### Temperature Settings (in `main.c`):
@@ -198,15 +299,6 @@ Control2              →    Control2 (3.3V when active)
 ```bash
 # Find the correct port for ESP32 DEVKITV1
 ls /dev/tty.*
-
-# Monitor serial output
-idf.py -p /dev/tty.usbserial-0001 -b 115200 monitor
-
-# Flash firmware
-idf.py -p /dev/tty.usbserial-0001 -b 115200 flash
-
-# Build and flash
-idf.py -p /dev/tty.usbserial-0001 -b 115200 build flash
 ```
 
 ## Project Structure
@@ -215,7 +307,11 @@ idf.py -p /dev/tty.usbserial-0001 -b 115200 build flash
 esp32_airzone/
 ├── main/
 │   ├── main.c              # Main application code
-│   └── CMakeLists.txt      # Main component configuration
+│   ├── CMakeLists.txt      # Main component configuration
+│   └── idf_component.yml   # Component dependencies
+├── .github/workflows/      # CI/CD pipelines
+│   ├── esp32-build.yml     # Production build workflow
+│   └── esp32-dev.yml       # Development build workflow
 ├── components/
 │   ├── dht/                # DHT11 sensor component
 │   │   ├── dht.h
