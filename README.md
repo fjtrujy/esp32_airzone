@@ -21,7 +21,7 @@ A complete ESP32-based replacement for the Airzone Tacto V1.5 thermostat control
 1. **ESP32 DEVKITV1 Development Board**
 2. **DHT11 Temperature & Humidity Sensor**
 3. **SSD1306 OLED Display** (128x64 I2C)
-4. **1x External Push Button** (for MODE button)
+4. **3x External Push Buttons** (White, Blue, Red)
 5. **2x Relay Modules** (for Control1 and Control2 outputs)
 6. **Breadboard and Jumper Wires**
 7. **Power Supply** (5V for relays, 3.3V for ESP32)
@@ -31,23 +31,21 @@ A complete ESP32-based replacement for the Airzone Tacto V1.5 thermostat control
 ESP32 DEVKITV1 Pin    →    Component
 ─────────────────────────────────────────
 GPIO 4               →    DHT11 Data Pin
-GPIO 0 (BOOT)        →    Button UP (Built-in BOOT button)
-GPIO 2 (Built-in LED)→    Button DOWN (Built-in LED)
-GPIO 5               →    Button MODE (External button)
-GPIO 18              →    Control1 Relay
-GPIO 19              →    Control2 Relay
+GPIO 5               →    White Button (MODE) - External
+GPIO 13              →    Control1 Relay
+GPIO 14              →    Control2 Relay
+GPIO 18              →    Blue Button (DECREASE) - External
+GPIO 19              →    Red Button (INCREASE) - External
 GPIO 21              →    OLED SDA (I2C)
 GPIO 22              →    OLED SCL (I2C)
-3.3V                 →    OLED VCC, DHT11 VCC
-GND                  →    OLED GND, DHT11 GND, Relay GND
+3.3V                 →    OLED VCC, DHT11 VCC, Button VCC
+GND                  →    OLED GND, DHT11 GND, Relay GND, Button GND
 5V                   →    Relay VCC
 ```
 
 ### ESP32 DEVKITV1 Built-in Features Used:
-- **BOOT Button (GPIO 0)**: Temperature UP button
-- **Built-in LED (GPIO 2)**: Temperature DOWN button indicator
 - **USB Port**: Programming and power supply
-- **3.3V/5V Outputs**: Power for sensors and relays
+- **3.3V/5V Outputs**: Power for sensors, relays, and external buttons
 
 ## Software Features
 
@@ -60,9 +58,9 @@ GND                  →    OLED GND, DHT11 GND, Relay GND
 ### User Interface:
 - **OLED Display**: Shows current temperature, set temperature, mode, and status
 - **Button Controls**: 
-  - BOOT Button: Increase set temperature by 0.5°C
-  - Built-in LED area: Decrease set temperature by 0.5°C
-  - External MODE Button: Toggle between COOL and HEAT modes
+  - White Button: Change thermostat mode (OFF → COOL → HEAT → OFF)
+  - Blue Button: Decrease set temperature by 0.5°C
+  - Red Button: Increase set temperature by 0.5°C
 - **Real-time Updates**: Display updates every 2 seconds with new readings
 
 ### System Architecture:
@@ -98,10 +96,10 @@ idf.py -p /dev/tty.usbserial-0001 -b 115200 monitor
 
 ### 3. Hardware Assembly
 1. Connect components according to the wiring diagram in `WIRING_DIAGRAM.md`
-2. Use ESP32 DEVKITV1 built-in features:
-   - BOOT button for temperature UP
-   - Built-in LED area for temperature DOWN
-   - Add external button for MODE toggle
+2. Connect external buttons:
+   - White button to GPIO 5 for mode control
+   - Blue button to GPIO 18 for temperature decrease
+   - Red button to GPIO 19 for temperature increase
 3. Power up the system via USB
 4. Verify OLED display shows startup message
 5. Test button functionality
@@ -220,13 +218,13 @@ idf.py check-format
 All GPIO pins are optimized for ESP32 DEVKITV1:
 ```c
 #define DHT11_GPIO GPIO_NUM_4         // DHT11 sensor pin
-#define BUTTON_UP_GPIO GPIO_NUM_0     // Built-in BOOT button
-#define BUTTON_DOWN_GPIO GPIO_NUM_2   // Built-in LED
-#define BUTTON_MODE_GPIO GPIO_NUM_5   // External MODE button
-#define CONTROL1_GPIO GPIO_NUM_18     // Control1 relay output
-#define CONTROL2_GPIO GPIO_NUM_19     // Control2 relay output
-#define I2C_MASTER_SCL_IO GPIO_NUM_22 // OLED SCL
-#define I2C_MASTER_SDA_IO GPIO_NUM_21 // OLED SDA
+#define BUTTON_WHITE_GPIO GPIO_NUM_5   // White button - MODE
+#define BUTTON_BLUE_GPIO GPIO_NUM_18   // Blue button - DECREASE temperature
+#define BUTTON_RED_GPIO GPIO_NUM_19    // Red button - INCREASE temperature
+#define CONTROL1_GPIO GPIO_NUM_13      // Control1 relay output
+#define CONTROL2_GPIO GPIO_NUM_14      // Control2 relay output
+#define I2C_MASTER_SCL_IO GPIO_NUM_22  // OLED SCL
+#define I2C_MASTER_SDA_IO GPIO_NUM_21  // OLED SDA
 ```
 
 ## Usage
@@ -235,13 +233,13 @@ All GPIO pins are optimized for ESP32 DEVKITV1:
 1. **Power On**: Connect ESP32 DEVKITV1 via USB, system initializes and displays startup message
 2. **Temperature Reading**: DHT11 sensor reads temperature every 2 seconds
 3. **Display Update**: OLED shows current temperature, set temperature, mode, and status
-4. **Button Control**: Use built-in and external buttons to adjust set temperature and change modes
+4. **Button Control**: Use white, blue, and red buttons to adjust set temperature and change modes
 5. **Automatic Control**: System automatically activates/deactivates relays based on temperature
 
-### Button Functions (ESP32 DEVKITV1):
-- **BOOT Button (GPIO 0)**: Increase set temperature by 0.5°C
-- **Built-in LED Area (GPIO 2)**: Decrease set temperature by 0.5°C
-- **External MODE Button (GPIO 5)**: Toggle between COOL and HEAT modes
+### Button Functions (External Buttons):
+- **White Button (GPIO 5)**: Change thermostat mode (OFF → COOL → HEAT → OFF)
+- **Blue Button (GPIO 18)**: Decrease set temperature by 0.5°C
+- **Red Button (GPIO 19)**: Increase set temperature by 0.5°C
 
 ### Control Logic:
 - **COOL Mode**: Activates Control1 when temperature is too high
@@ -274,20 +272,29 @@ Control2              →    Control2 (3.3V when active)
    - Try different USB cable
    - Check if port appears in device manager
 
-2. **BOOT Button Not Working**:
-   - Ensure GPIO 0 is not pulled low during boot
-   - Press BOOT button while uploading firmware
+2. **White Button Not Working**:
+   - Check if GPIO 5 is connected correctly
+   - Verify button wiring (3.3V to one side, GPIO 5 to other side)
    - Check if button is physically working
+   - Ensure proper pull-up resistor configuration
 
-3. **Built-in LED Not Responding**:
-   - Check if GPIO 2 is configured correctly
-   - LED might be inverted (active low)
-   - Add external button if needed
+3. **Blue Button Not Working**:
+   - Check if GPIO 18 is connected correctly
+   - Verify button wiring (3.3V to one side, GPIO 18 to other side)
+   - Button might be inverted (active low)
+   - Check pull-up resistor configuration
 
-4. **Power Issues**:
+4. **Red Button Not Working**:
+   - Check if GPIO 19 is connected correctly
+   - Verify button wiring (3.3V to one side, GPIO 19 to other side)
+   - Button might be inverted (active low)
+   - Check pull-up resistor configuration
+
+5. **Power Issues**:
    - ESP32 DEVKITV1 needs stable 3.3V
    - USB provides 5V, internal regulator converts to 3.3V
    - Don't exceed 3.3V on GPIO pins
+   - Ensure buttons have proper 3.3V power supply
 
 ### General Issues:
 1. **OLED not displaying**: Check I2C connections and address

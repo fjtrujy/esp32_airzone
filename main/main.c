@@ -14,18 +14,18 @@ static const char *TAG = "ESP32_AIRZONE";
 
 // GPIO Configuration for ESP32 DEVKITV1
 #define DHT11_GPIO GPIO_NUM_4
-#define BUTTON_UP_GPIO GPIO_NUM_0      // Built-in BOOT button
-#define BUTTON_DOWN_GPIO GPIO_NUM_2    // Built-in LED
-#define BUTTON_MODE_GPIO GPIO_NUM_5    // External MODE button
-#define CONTROL1_GPIO GPIO_NUM_18      // Control1 relay output
-#define CONTROL2_GPIO GPIO_NUM_19      // Control2 relay output
+#define BUTTON_WHITE_GPIO GPIO_NUM_5      // White button - MODE (External)
+#define BUTTON_BLUE_GPIO GPIO_NUM_18      // Blue button - DECREASE temperature (External)
+#define BUTTON_RED_GPIO GPIO_NUM_19       // Red button - INCREASE temperature (External)
+#define CONTROL1_GPIO GPIO_NUM_13         // Control1 relay output
+#define CONTROL2_GPIO GPIO_NUM_14         // Control2 relay output
 
 // Temperature control parameters
 #define TEMP_CHECK_INTERVAL_MS 2000    // Check temperature every 2 seconds
 #define TEMP_MARGIN 0.5                // Temperature margin in Celsius
 #define TEMP_STEP 0.5                  // Temperature adjustment step
 #define MIN_TEMP 16.0                  // Minimum set temperature
-#define MAX_TEMP 30.0                  // Maximum set temperature
+#define MAX_TEMP 35.0                  // Maximum set temperature
 #define DEFAULT_TEMP 22.0              // Default set temperature
 
 // Thermostat modes
@@ -94,7 +94,7 @@ void app_main(void)
     // Configure button GPIOs
     io_conf.intr_type = GPIO_INTR_NEGEDGE;
     io_conf.mode = GPIO_MODE_INPUT;
-    io_conf.pin_bit_mask = (1ULL << BUTTON_UP_GPIO) | (1ULL << BUTTON_DOWN_GPIO) | (1ULL << BUTTON_MODE_GPIO);
+    io_conf.pin_bit_mask = (1ULL << BUTTON_WHITE_GPIO) | (1ULL << BUTTON_BLUE_GPIO) | (1ULL << BUTTON_RED_GPIO);
     io_conf.pull_up_en = 1;
     gpio_config(&io_conf);
 
@@ -105,9 +105,9 @@ void app_main(void)
     gpio_install_isr_service(0);
 
     // Add ISR handlers for buttons
-    gpio_isr_handler_add(BUTTON_UP_GPIO, gpio_isr_handler, (void*)BUTTON_UP_GPIO);
-    gpio_isr_handler_add(BUTTON_DOWN_GPIO, gpio_isr_handler, (void*)BUTTON_DOWN_GPIO);
-    gpio_isr_handler_add(BUTTON_MODE_GPIO, gpio_isr_handler, (void*)BUTTON_MODE_GPIO);
+    gpio_isr_handler_add(BUTTON_WHITE_GPIO, gpio_isr_handler, (void*)BUTTON_WHITE_GPIO);
+    gpio_isr_handler_add(BUTTON_BLUE_GPIO, gpio_isr_handler, (void*)BUTTON_BLUE_GPIO);
+    gpio_isr_handler_add(BUTTON_RED_GPIO, gpio_isr_handler, (void*)BUTTON_RED_GPIO);
 
     ESP_LOGI(TAG, "Starting DHT11 sensor on GPIO %d", DHT11_GPIO);
 
@@ -188,21 +188,21 @@ static void process_button_event(button_event_t event)
     const translations_t* t = get_translations();
     
     switch (event.gpio_num) {
-        case BUTTON_UP_GPIO:
-            set_temperature += TEMP_STEP;
-            if (set_temperature > MAX_TEMP) set_temperature = MAX_TEMP;
-            ESP_LOGI(TAG, "Temperature UP: %.1f°C", set_temperature);
+        case BUTTON_WHITE_GPIO:
+            current_mode = (current_mode + 1) % 3; // Cycle through OFF, COOL, HEAT
+            ESP_LOGI(TAG, "Mode changed to: %d", current_mode);
             break;
             
-        case BUTTON_DOWN_GPIO:
+        case BUTTON_BLUE_GPIO:
             set_temperature -= TEMP_STEP;
             if (set_temperature < MIN_TEMP) set_temperature = MIN_TEMP;
             ESP_LOGI(TAG, "Temperature DOWN: %.1f°C", set_temperature);
             break;
             
-        case BUTTON_MODE_GPIO:
-            current_mode = (current_mode + 1) % 3; // Cycle through OFF, COOL, HEAT
-            ESP_LOGI(TAG, "Mode changed to: %d", current_mode);
+        case BUTTON_RED_GPIO:
+            set_temperature += TEMP_STEP;
+            if (set_temperature > MAX_TEMP) set_temperature = MAX_TEMP;
+            ESP_LOGI(TAG, "Temperature UP: %.1f°C", set_temperature);
             break;
     }
 }
