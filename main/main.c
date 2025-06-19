@@ -17,8 +17,8 @@ static const char *TAG = "ESP32_AIRZONE";
 #define BUTTON_WHITE_GPIO GPIO_NUM_5      // White button - MODE (External)
 #define BUTTON_BLUE_GPIO GPIO_NUM_18      // Blue button - DECREASE temperature (External)
 #define BUTTON_RED_GPIO GPIO_NUM_19       // Red button - INCREASE temperature (External)
-#define CONTROL1_GPIO GPIO_NUM_13         // Control1 relay output
-#define CONTROL2_GPIO GPIO_NUM_14         // Control2 relay output
+#define COOLING_GPIO GPIO_NUM_13          // Cooling relay output
+#define HEATING_GPIO GPIO_NUM_14          // Heating relay output
 
 // Temperature control parameters
 #define TEMP_CHECK_INTERVAL_MS 2000    // Check temperature every 2 seconds
@@ -40,8 +40,8 @@ static float current_temperature = 0.0f;
 static float current_humidity = 0.0f;
 static float set_temperature = DEFAULT_TEMP;
 static thermostat_mode_t current_mode = MODE_OFF;
-static bool control1_active = false;
-static bool control2_active = false;
+static bool cooling_active = false;
+static bool heating_active = false;
 static QueueHandle_t button_queue = NULL;
 
 // Button debouncing variables
@@ -90,7 +90,7 @@ void app_main(void)
     gpio_config_t io_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_OUTPUT,
-        .pin_bit_mask = (1ULL << CONTROL1_GPIO) | (1ULL << CONTROL2_GPIO),
+        .pin_bit_mask = (1ULL << COOLING_GPIO) | (1ULL << HEATING_GPIO),
         .pull_down_en = 0,
         .pull_up_en = 0,
     };
@@ -115,6 +115,10 @@ void app_main(void)
     gpio_isr_handler_add(BUTTON_RED_GPIO, gpio_isr_handler, (void*)BUTTON_RED_GPIO);
 
     ESP_LOGI(TAG, "Starting DHT11 sensor on GPIO %d", DHT11_GPIO);
+
+    // Put relays in OFF state
+    gpio_set_level(COOLING_GPIO, 1);
+    gpio_set_level(HEATING_GPIO, 1);
 
     // Create tasks
     xTaskCreate(button_task, "button_task", 2048, NULL, 5, NULL);
@@ -235,38 +239,38 @@ static void process_button_event(button_event_t event)
 // Update control outputs based on temperature and mode
 static void update_control_outputs(void)
 {
-    bool new_control1 = false;
-    bool new_control2 = false;
+    bool new_cooling = false;
+    bool new_heating = false;
     
     if (current_mode == MODE_COOL) {
         if (current_temperature > set_temperature + TEMP_MARGIN) {
-            new_control1 = true; // Activate cooling
+            new_cooling = true; // Activate cooling
         } else if (current_temperature < set_temperature - TEMP_MARGIN) {
-            new_control1 = false; // Stop cooling
+            new_cooling = false; // Stop cooling
         }
     } else if (current_mode == MODE_HEAT) {
         if (current_temperature < set_temperature - TEMP_MARGIN) {
-            new_control1 = true; // Activate heating
+            new_heating = true; // Activate heating
         } else if (current_temperature > set_temperature + TEMP_MARGIN) {
-            new_control1 = false; // Stop heating
+            new_heating = false; // Stop heating
         }
     } else {
         // MODE_OFF - turn off all controls
-        new_control1 = false;
-        new_control2 = false;
+        new_cooling = false;
+        new_heating = false;
     }
     
     // Update control outputs
-    if (control1_active != new_control1) {
-        control1_active = new_control1;
-        gpio_set_level(CONTROL1_GPIO, control1_active ? 1 : 0);
-        ESP_LOGI(TAG, "Control1 %s", control1_active ? "ACTIVATED" : "DEACTIVATED");
+    if (cooling_active != new_cooling) {
+        cooling_active = new_cooling;
+        gpio_set_level(COOLING_GPIO, cooling_active ? 0 : 1);
+        ESP_LOGI(TAG, "Cooling %s", cooling_active ? "ACTIVATED" : "DEACTIVATED");
     }
     
-    if (control2_active != new_control2) {
-        control2_active = new_control2;
-        gpio_set_level(CONTROL2_GPIO, control2_active ? 1 : 0);
-        ESP_LOGI(TAG, "Control2 %s", control2_active ? "ACTIVATED" : "DEACTIVATED");
+    if (heating_active != new_heating) {
+        heating_active = new_heating;
+        gpio_set_level(HEATING_GPIO, heating_active ? 0 : 1);
+        ESP_LOGI(TAG, "Heating %s", heating_active ? "ACTIVATED" : "DEACTIVATED");
     }
 }
 

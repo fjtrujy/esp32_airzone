@@ -11,7 +11,7 @@ A complete ESP32-based replacement for the Airzone Tacto V1.5 thermostat control
 - **Button Controls**: 3 buttons for temperature adjustment and mode switching
 - **Smart Control Logic**: Automatic temperature control with configurable margins
 - **Dual Mode Support**: COOL and HEAT modes with appropriate control logic
-- **Relay Outputs**: 2 relay outputs for Control1 and Control2 signals
+- **Relay Outputs**: 2 relay outputs for Cooling and Heating signals
 - **Real-time Monitoring**: Serial output for debugging and monitoring
 - **ESP32 DEVKITV1 Optimized**: Uses built-in buttons and LED for easy setup
 
@@ -22,7 +22,7 @@ A complete ESP32-based replacement for the Airzone Tacto V1.5 thermostat control
 2. **DHT11 Temperature & Humidity Sensor**
 3. **SSD1306 OLED Display** (128x64 I2C)
 4. **3x External Push Buttons** (White, Blue, Red)
-5. **2x Relay Modules** (for Control1 and Control2 outputs)
+5. **2x Relay Modules** (for Cooling and Heating outputs)
 6. **Breadboard and Jumper Wires**
 7. **Power Supply** (5V for relays, 3.3V for ESP32)
 
@@ -32,8 +32,8 @@ ESP32 DEVKITV1 Pin    →    Component
 ─────────────────────────────────────────
 GPIO 4               →    DHT11 Data Pin
 GPIO 5               →    White Button (MODE) - External
-GPIO 13              →    Control1 Relay
-GPIO 14              →    Control2 Relay
+GPIO 13              →    Cooling Relay
+GPIO 14              →    Heating Relay
 GPIO 18              →    Blue Button (DECREASE) - External
 GPIO 19              →    Red Button (INCREASE) - External
 GPIO 21              →    OLED SDA (I2C)
@@ -220,13 +220,13 @@ idf.py check-format
 All GPIO pins are optimized for ESP32 DEVKITV1:
 ```c
 #define DHT11_GPIO GPIO_NUM_4         // DHT11 sensor pin
-#define BUTTON_WHITE_GPIO GPIO_NUM_5   // White button - MODE
-#define BUTTON_BLUE_GPIO GPIO_NUM_18   // Blue button - DECREASE temperature
-#define BUTTON_RED_GPIO GPIO_NUM_19    // Red button - INCREASE temperature
-#define CONTROL1_GPIO GPIO_NUM_13      // Control1 relay output
-#define CONTROL2_GPIO GPIO_NUM_14      // Control2 relay output
-#define I2C_MASTER_SCL_IO GPIO_NUM_22  // OLED SCL
-#define I2C_MASTER_SDA_IO GPIO_NUM_21  // OLED SDA
+#define BUTTON_WHITE_GPIO GPIO_NUM_5  // White button - MODE
+#define BUTTON_BLUE_GPIO GPIO_NUM_18  // Blue button - DECREASE temperature
+#define BUTTON_RED_GPIO GPIO_NUM_19   // Red button - INCREASE temperature
+#define COOLING_GPIO GPIO_NUM_13      // Cooling relay output
+#define HEATING_GPIO GPIO_NUM_14      // Heating relay output
+#define I2C_MASTER_SCL_IO GPIO_NUM_22 // OLED SCL
+#define I2C_MASTER_SDA_IO GPIO_NUM_21 // OLED SDA
 ```
 
 ## Usage
@@ -244,8 +244,8 @@ All GPIO pins are optimized for ESP32 DEVKITV1:
 - **Red Button (GPIO 19)**: Increase set temperature by 0.5°C
 
 ### Control Logic:
-- **COOL Mode**: Activates Control1 when temperature is too high
-- **HEAT Mode**: Activates Control1 when temperature is too low
+- **COOL Mode**: Activates Cooling when temperature is too high
+- **HEAT Mode**: Activates Heating when temperature is too low
 - **Hysteresis**: Prevents rapid cycling with 0.5°C margin
 
 ## Airzone Integration
@@ -256,15 +256,16 @@ ESP32 DEVKITV1/Relay  →    Airzone Terminal
 ─────────────────────────────────────────────
 5V                    →    VCC (5V)
 GND                   →    GND
-Control1              →    Control1 (3.3V when active)
-Control2              →    Control2 (3.3V when active)
+Cooling               →    Cooling (3.3V when active)
+Heating               →    Heating (3.3V when active)
 ```
 
 ### Integration Steps:
-1. Connect relay outputs to Airzone control terminals
-2. Verify signal compatibility (3.3V logic levels)
-3. Test complete temperature control cycle
-4. Fine-tune temperature settings as needed
+1. Connect cooling relay output to Airzone cooling control terminal
+2. Connect heating relay output to Airzone heating control terminal
+3. Verify signal compatibility (3.3V logic levels)
+4. Test complete temperature control cycle
+5. Fine-tune temperature settings as needed
 
 ## Troubleshooting
 
