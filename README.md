@@ -61,6 +61,7 @@ GND                  →    OLED GND, DHT11 GND, Relay GND, Button GND
   - White Button: Change thermostat mode (OFF → COOL → HEAT → OFF)
   - Blue Button: Decrease set temperature by 0.5°C
   - Red Button: Increase set temperature by 0.5°C
+- **Button Debouncing**: 300ms debounce time prevents multiple rapid button presses
 - **Real-time Updates**: Display updates every 2 seconds with new readings
 
 ### System Architecture:
@@ -210,8 +211,9 @@ idf.py check-format
 ### Temperature Settings (in `main.c`):
 ```c
 #define TEMP_CHECK_INTERVAL_MS 2000  // Check temperature every 2 seconds
-#define TEMP_MARGIN 0.5              // Temperature margin in Celsius
+#define TEMP_MARGIN 1.0              // Temperature margin in Celsius
 #define TEMP_STEP 0.5                // Temperature adjustment step
+#define BUTTON_DEBOUNCE_MS 300       // Button debounce time in milliseconds
 ```
 
 ### GPIO Configuration for ESP32 DEVKITV1:

@@ -22,7 +22,7 @@ static const char *TAG = "ESP32_AIRZONE";
 
 // Temperature control parameters
 #define TEMP_CHECK_INTERVAL_MS 2000    // Check temperature every 2 seconds
-#define TEMP_MARGIN 0.5                // Temperature margin in Celsius
+#define TEMP_MARGIN 1.0                // Temperature margin in Celsius
 #define TEMP_STEP 0.5                  // Temperature adjustment step
 #define MIN_TEMP 16.0                  // Minimum set temperature
 #define MAX_TEMP 35.0                  // Maximum set temperature
@@ -44,6 +44,10 @@ static bool control1_active = false;
 static bool control2_active = false;
 static QueueHandle_t button_queue = NULL;
 
+// Button debouncing variables
+static uint32_t last_button_time[3] = {0, 0, 0}; // Track each button separately
+static const uint32_t BUTTON_DEBOUNCE_MS = 300; // 300ms debounce time - prevents multiple rapid button presses
+
 // Button event structure
 typedef struct {
     uint32_t gpio_num;
@@ -59,6 +63,7 @@ static void gpio_isr_handler(void *arg);
 static void update_display(void);
 static void process_button_event(button_event_t event);
 static void update_control_outputs(void);
+static int get_button_index(uint32_t gpio_num);
 
 void app_main(void)
 {
@@ -187,6 +192,26 @@ static void process_button_event(button_event_t event)
 {
     const translations_t* t = get_translations();
     
+    // Get button index and validate
+    int button_index = get_button_index(event.gpio_num);
+    if (button_index < 0) {
+        ESP_LOGE(TAG, "Invalid button GPIO: %lu", event.gpio_num);
+        return;
+    }
+    
+    // Get current time for debouncing
+    uint32_t current_time = xTaskGetTickCount() * portTICK_PERIOD_MS;
+    
+    // Check if enough time has passed since last button press
+    if (current_time - last_button_time[button_index] < BUTTON_DEBOUNCE_MS) {
+        ESP_LOGI(TAG, "Button press ignored - debouncing (time since last: %lums)", 
+                 current_time - last_button_time[button_index]);
+        return;
+    }
+    
+    // Update last button time
+    last_button_time[button_index] = current_time;
+    
     switch (event.gpio_num) {
         case BUTTON_WHITE_GPIO:
             current_mode = (current_mode + 1) % 3; // Cycle through OFF, COOL, HEAT
@@ -287,4 +312,14 @@ static void update_display(void)
     
     // Update display
     ssd1306_display();
+}
+
+// Helper function to get button index from GPIO number
+static int get_button_index(uint32_t gpio_num) {
+    switch (gpio_num) {
+        case BUTTON_WHITE_GPIO: return 0;
+        case BUTTON_BLUE_GPIO: return 1;
+        case BUTTON_RED_GPIO: return 2;
+        default: return -1;
+    }
 }
