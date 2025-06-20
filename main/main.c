@@ -243,17 +243,9 @@ static void update_control_outputs(void)
     bool new_heating = false;
     
     if (current_mode == MODE_COOL) {
-        if (current_temperature > set_temperature + TEMP_MARGIN) {
-            new_cooling = true; // Activate cooling
-        } else if (current_temperature < set_temperature - TEMP_MARGIN) {
-            new_cooling = false; // Stop cooling
-        }
+        new_cooling = current_temperature > set_temperature - TEMP_MARGIN;
     } else if (current_mode == MODE_HEAT) {
-        if (current_temperature < set_temperature - TEMP_MARGIN) {
-            new_heating = true; // Activate heating
-        } else if (current_temperature > set_temperature + TEMP_MARGIN) {
-            new_heating = false; // Stop heating
-        }
+        new_heating = current_temperature < set_temperature + TEMP_MARGIN;
     } else {
         // MODE_OFF - turn off all controls
         new_cooling = false;

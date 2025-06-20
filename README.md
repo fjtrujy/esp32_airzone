@@ -50,9 +50,9 @@ GND                  →    OLED GND, DHT11 GND, Relay GND, Button GND
 ## Software Features
 
 ### Temperature Control Logic:
-- **COOL Mode**: Activates when current temperature > set temperature + margin
-- **HEAT Mode**: Activates when current temperature < set temperature - margin
-- **Hysteresis**: Prevents rapid on/off cycling with configurable margin
+- **COOL Mode**: Activates Cooling when temperature > set temperature + margin, stops when temperature ≤ set temperature
+- **HEAT Mode**: Activates Heating when temperature < set temperature - margin, stops when temperature ≥ set temperature
+- **Hysteresis**: Prevents rapid cycling with configurable margin (1.0°C)
 - **Configurable Parameters**: Temperature margin, check interval, and adjustment step
 
 ### User Interface:
@@ -244,9 +244,9 @@ All GPIO pins are optimized for ESP32 DEVKITV1:
 - **Red Button (GPIO 19)**: Increase set temperature by 0.5°C
 
 ### Control Logic:
-- **COOL Mode**: Activates Cooling when temperature is too high
-- **HEAT Mode**: Activates Heating when temperature is too low
-- **Hysteresis**: Prevents rapid cycling with 0.5°C margin
+- **COOL Mode**: Activates Cooling when temperature > set temperature + margin, stops when temperature ≤ set temperature
+- **HEAT Mode**: Activates Heating when temperature < set temperature - margin, stops when temperature ≥ set temperature
+- **Hysteresis**: Prevents rapid cycling with configurable margin (1.0°C)
 
 ## Airzone Integration
 
